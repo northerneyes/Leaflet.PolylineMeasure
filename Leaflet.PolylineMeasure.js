@@ -298,7 +298,7 @@
                 radius: 3
             }
         },
-        
+
         /**
          * Create a control button
          * @param {String}      label           Label to add
@@ -332,7 +332,7 @@
             self._container = document.createElement('div');
             self._container.classList.add('leaflet-bar');
             L.DomEvent.disableClickPropagation(self._container); // otherwise drawing process would instantly start at controls' container or double click would zoom-in map
-            
+
             var title = self.options.measureControlTitleOn;
             var label = self.options.measureControlLabel;
             var classes = self.options.measureControlClasses;
@@ -345,7 +345,7 @@
             self._arrArrows = [];
             self._measureControl = self._createControl(label, title, classes, self._container, self._toggleMeasure, self);
             self._measureControl.setAttribute('id', _measureControlId);
-            
+
             if (self.options.showMeasurementsClearControl) {
                 var title = self.options.clearControlTitle;
                 var label = self.options.clearControlLabel;
@@ -433,7 +433,7 @@
             self._lines = [];
             self._arrArrows = [];
         },
-        
+
         _changeUnit: function() {
             if (self.options.unit == "metres") {
                 self.options.unit = "landmiles";
@@ -532,9 +532,9 @@
          * Calculate Great-circle Arc (= shortest distance on a sphere like the Earth) between two coordinates
          * formulas: http://www.edwilliams.org/avform.htm
          * @private
-         */     
+         */
         _polylineArc: function (_from, _to) {
-            
+
             function _GCinterpolate (f) {
                 A = Math.sin((1 - f) * d) / Math.sin(d);
                 B = Math.sin(f * d) / Math.sin(d);
@@ -550,13 +550,13 @@
                 diff = lngInterpol-fromLng*180/Math.PI;
                 function trunc(n) { return Math[n > 0 ? "floor" : "ceil"](n); }   // alternatively we could use the new Math.trunc method, but Internet Explorer doesn't know it
                 if (diff < 0) {
-                    lngInterpol = lngInterpol  - trunc ((diff - 180)/ 360) * 360; 
+                    lngInterpol = lngInterpol  - trunc ((diff - 180)/ 360) * 360;
                 } else {
                     lngInterpol = lngInterpol  - trunc ((diff +180)/ 360) * 360;
                 }
                 return [latInterpol, lngInterpol];
             }
-             
+
             function _GCarc (npoints) {
                 arrArcCoords = [];
                 var delta = 1.0 / (npoints-1 );
@@ -568,7 +568,7 @@
                 }
                 return arrArcCoords;
             }
-   
+
             var fromLat = _from.lat;  // work with with copies of object's elements _from.lat and _from.lng, otherwise they would get modiefied due to call-by-reference on Objects in Javascript
             var fromLng = _from.lng;
             var toLat = _to.lat;
@@ -586,8 +586,8 @@
             }
             return arrLatLngs;
         },
-    
-    
+
+
         /**
          * Update the tooltip distance
          * @param {Number} total        Total distance
@@ -610,7 +610,7 @@
                 }
                 return (brng % 360);
             }
-            
+
             var angleIn = calcAngle (currentCoords, lastPointCoords, "inbound");
             var angleOut = calcAngle (lastPointCoords, currentCoords, "outbound");
             var totalRound = self._getDistance (total);
@@ -633,24 +633,28 @@
 
         _drawArrow: function (arcLine) {
             var self = this;
+            var P0 = self._map.project(arcLine[0]);
+            var P100 = self._map.project(arcLine[arcLine.length - 1]);
             var P48 = arcLine[48];
             var P49 = arcLine[49];
+            var diffLng0100 = P100.y - P0.y;
+            var diffLat0100 = P100.x - P0.x;
             var diffLng4849 = P49[1] - P48[1];
             var diffLat4849 = P49[0] - P48[0];
             var center = [P48[0] + diffLat4849/2, P48[1] + diffLng4849/2];  // center of Great-circle distance, NOT of the arc on a Mercator map! reason: a) to complicated b) map not always Mercator c) good optical feature to see where real center of distance is not the "virtual" warped arc center due to Mercator projection
-                // angle just an aprroximation, which could be somewhat off if Line runs near high latitudes. Use of *geographical coords* for line segment [48] to [49] is best method. Use of *Pixel coords* for just one arc segement [48] to [49] could create for short lines unexact rotation angles, and the use Use of Pixel coords between endpoints [0] to [98] results in even more rotation difference for high latitudes as with geogrpaphical coords-method 
-            var cssAngle = -Math.atan2(diffLat4849, diffLng4849)*57.29578   // convert radiant to degree as needed for use as CSS value; cssAngle is opposite to mathematical angle.                 
-            iconArrow = L.divIcon ({ 
-                className: "",  // to avoid getting a default class with paddings and borders assigned by Leaflet
+                // angle just an aprroximation, which could be somewhat off if Line runs near high latitudes. Use of *geographical coords* for line segment [48] to [49] is best method. Use of *Pixel coords* for just one arc segement [48] to [49] could create for short lines unexact rotation angles, and the use Use of Pixel coords between endpoints [0] to [98] results in even more rotation difference for high latitudes as with geogrpaphical coords-method
+            var cssAngle = 90 - Math.atan2(diffLat0100, diffLng0100)* 180 / Math.PI   // convert radiant to degree as needed for use as CSS value; cssAngle is opposite to mathematical angle.
+            iconArrow = L.divIcon ({
+                className: "measurement-arrow",
                 iconSize: [16, 16],
                 iconAnchor: [8, 8],
                     // html : "<img src='iconArrow.png' style='background:green; height:100%; vertical-align:top; transform:rotate("+ cssAngle +"deg)'>"  <<=== alternative method by the use of an image instead of a Unicode symbol.
-                html : "<div style = 'font-size: 16px; line-height: 16px; vertical-align:top; transform: rotate("+ cssAngle +"deg)'>&#x27a4;</div>"   // best results if iconSize = font-size = line-height and iconAnchor font-size/2 .both values needed to position symbol in center of L.divIcon for all font-sizes. 
+                html : "<div style = 'font-size: 16px; line-height: 16px; vertical-align:top; transform: rotate("+ cssAngle +"deg)'>&#x27a4;</div>"   // best results if iconSize = font-size = line-height and iconAnchor font-size/2 .both values needed to position symbol in center of L.divIcon for all font-sizes.
                 });
                 arrow = L.marker (center, {icon: iconArrow}).addTo(self._layerPaint);
         },
 
-        
+
         /**
          * Event to fire on mouse move
          * @param {Object} e Event
@@ -670,8 +674,8 @@
             var distanceSegment = currentCoords.distanceTo (lastPointCoords);
             self._updateTooltip (currentTooltip, prevTooltip, self._currentLine.distance + distanceSegment, distanceSegment, lastPointCoords, currentCoords);
         },
-        
-        
+
+
         _startLine: function (clickCoords) {
             var icon = L.divIcon({
                 className: 'polyline-measure-tooltip',
@@ -758,7 +762,7 @@
                     this.tooltips.push (tooltipNew);
                     this.handleMarkers (currentCoords);
                 },
-                
+
                 finalize: function() {
                     // clean up tooltip created by last click
                     self._layerPaint.removeLayer(this.tooltips.last());
@@ -780,7 +784,7 @@
                     self._resetPathVariables();
                 }
             };
-            
+
             tooltipStart = L.marker(clickCoords, {
                     icon: icon,
                     interactive: false
@@ -796,7 +800,7 @@
             this._currentLine.markers.last = last;
         },
 
-            
+
         /**
          * Event to fire on mouse click
          * @param {Object} e Event
@@ -831,7 +835,7 @@
             self._currentLine = null;
             self._arrArrowsCurrentline = [];
         },
-      
+
         _dragCircleMouseup: function () {
             self._resetPathVariables();
             self._map.off ('mousemove', self._dragCircleMousemove, self);
@@ -839,7 +843,7 @@
             self._map.on ('mousemove', self._mouseMove, self);
             self._map.off ('mouseup', self._dragCircleMouseup, self);
         },
-      
+
         _dragCircleMousemove: function (e2) {
             var mouseNewLat = e2.latlng.lat;
             var mouseNewLng = e2.latlng.lng;
@@ -869,7 +873,7 @@
                 self._lines[lineNr].path.setLatLngs (lineCoords);
                 if (circleNr >= 0) {     // just update tooltip position if moved circle is 2nd, 3rd, 4th etc. circle of a polyline
                     self._lines[lineNr].tooltips[circleNr].setLatLng (currentCircleCoords);
-                }    
+                }
                 var totalDistance = 0;
                 // update tooltip texts of each tooltip
                 self._lines[lineNr].tooltips.map (function (item, index) {
@@ -886,7 +890,7 @@
                 });
                 self._map.on ('mouseup', self._dragCircleMouseup, self);
         },
-      
+
         _dragCircle: function (e1) {
             self._e1 = e1;
             if ((self._measuring) && (self._cntCircle === 0)) {    // just execute drag-function if Measuring tool is active but no line is being drawn at the moment.
