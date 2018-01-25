@@ -296,7 +296,9 @@
                  * @default
                  */
                 radius: 3
-            }
+            },
+
+            pane: 'overlayPane'
         },
 
         /**
@@ -397,7 +399,7 @@
                     self._layerPaint = L.layerGroup().addTo(self._map);
                 }
                 self._map.on ('mousemove', self._mouseMove, self);   //  enable listing to 'mousemove', 'click', 'keydown' events
-                self._map.on ('click', self._mouseClick, self);
+                self._map.on ('mousedown', self._mouseClick, self);
                 L.DomEvent.on (document, 'keydown', self._onKeyDown, self);
                 self._resetPathVariables();
             } else {   // if measuring is going to be switched off
@@ -405,7 +407,7 @@
                 self._measureControl.title = self.options.measureControlTitleOn;
                 self._map._container.style.cursor = self._oldCursor;
                 self._map.off ('mousemove', self._mouseMove, self);
-                self._map.off ('click', self._mouseClick, self);
+                self._map.off ('mousedown', self._mouseClick, self);
                 L.DomEvent.off (document, 'keydown', self._onKeyDown, self);
                 if(self._doubleClickZoom) {
                     self._map.doubleClickZoom.enable();
@@ -662,7 +664,7 @@
          */
         _mouseMove: function (e) {
             var currentCoords = e.latlng;
-            self._map.on ('click', self._mouseClick, self);  // necassary for _dragCircle. If switched on already within _dragCircle an unwanted click is fired at the end of the drag.
+            self._map.on ('mousedown', self._mouseClick, self);  // necassary for _dragCircle. If switched on already within _dragCircle an unwanted click is fired at the end of the drag.
             if(!currentCoords || !self._currentLine) {
                 return;
             }
@@ -696,13 +698,15 @@
                     color: self.options.tempLine.color,
                     weight: self.options.tempLine.weight,
                     interactive: false,
-                    dashArray: '8,8'
+                    dashArray: '8,8',
+                    pane: self.options.pane
                 }).addTo(self._layerPaint).bringToBack(),
                 path: L.polyline([], {
                     // Style of fixed, solid line after mouse is clicked
                     color: self.options.fixedLine.color,
                     weight: self.options.fixedLine.weight,
-                    interactive: false
+                    interactive: false,
+                    pane: self.options.pane
                 }).addTo(self._layerPaint).bringToBack(),
                 handleMarkers: function(latlng) {
                     // update style on previous marker
@@ -722,7 +726,7 @@
                     marker.cntLine = self._lines.length;
                     marker.cntCircle = self._cntCircle;
                     self._cntCircle++;
-                    marker.on('mousedown', self._dragCircle, self);
+                    marker.on('mousedown touchstart', self._dragCircle, self);
                     marker.on('click', self._finishPath);
                     this.markers.push(marker);
                 },
@@ -822,6 +826,7 @@
          * @private
          */
         _finishPath: function(e) {
+            L.DomEvent.stopPropagation(e);
             self._currentLine.finalize();
             if (e) self._finishPoint = e.containerPoint;
         },
@@ -892,11 +897,12 @@
         },
 
         _dragCircle: function (e1) {
+            L.DomEvent.stopPropagation(e1);
             self._e1 = e1;
             if ((self._measuring) && (self._cntCircle === 0)) {    // just execute drag-function if Measuring tool is active but no line is being drawn at the moment.
                 self._map.dragging.disable();  // turn of moving of the map during drag of a circle
                 self._map.off ('mousemove', self._mouseMove, self);
-                self._map.off ('click', self._mouseClick, self);
+                self._map.off ('mousedown', self._mouseClick, self);
                 self._mouseStartingLat = e1.latlng.lat;
                 self._mouseStartingLng = e1.latlng.lng;
                 self._circleStartingLat = e1.target._latlng.lat;
