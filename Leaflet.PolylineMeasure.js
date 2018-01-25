@@ -826,7 +826,7 @@
          * @private
          */
         _finishPath: function(e) {
-            L.DomEvent.stopPropagation(e);
+            if (e) L.DomEvent.stopPropagation(e);
             self._currentLine.finalize();
             if (e) self._finishPoint = e.containerPoint;
         },
