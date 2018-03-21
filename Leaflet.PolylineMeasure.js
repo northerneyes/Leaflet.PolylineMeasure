@@ -319,7 +319,8 @@
             classesToAdd.forEach(function(c) {
                 anchor.classList.add(c);
             });
-            L.DomEvent.on (anchor, 'click', fn, context);
+            const isTouchDevice = 'ontouchstart' in window;
+            L.DomEvent.on (anchor, isTouchDevice ? 'touchstart' : 'click', fn, context);
             container.appendChild(anchor);
             return anchor;
         },
